@@ -55,7 +55,7 @@ namespace CubeGame.Scripts
         void RenderFrame(FrameEventArgs e)
         {
             realFps = (int)(1 / e.Time);
-            render.RenderFrame(gameWindow, (float)e.Time);
+            render.RenderFrame(gameWindow, (float)e.Time, width, height);
             gameWindow.SwapBuffers();
         }
         void Unload()

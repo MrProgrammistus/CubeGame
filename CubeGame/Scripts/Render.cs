@@ -34,6 +34,7 @@ namespace CubeGame.Scripts
 						-0.505f, -0.505f,  0.505f, 0,
 						 0.505f, -0.505f, -0.505f, 0,
 						-0.505f, -0.505f, -0.505f, 0,};
+		float[] data_curs;
 
 		// шейдеры
 		public Shader? shader;
@@ -43,7 +44,7 @@ namespace CubeGame.Scripts
         public World world = new();
 
         // дистанция рендера
-        const int renderDistance = 5;
+        const int renderDistance = 8;
 
 		// всякое
 		int count;
@@ -65,14 +66,14 @@ namespace CubeGame.Scripts
 
         System.Timers.Timer? timer;
 
-        public void Load(int width, int height)
-        {
+		public void Load(int width, int height)
+		{
 			//текстуры
 			texture = new("Textures\\texture.png", TextureUnit.Texture0);
 
 			// загрузка драйверов
-            (vbo, vao, shader) = DriverGL.Load();
-            (vbo_line, vao_line, shader_line) = DriverGL.Load(frag: "Shaders/shader_line.frag");
+			(vbo, vao, shader) = DriverGL.Load();
+			(vbo_line, vao_line, shader_line) = DriverGL.Load(frag: "Shaders/shader_line.frag");
 
 			// стартовые манипуляции с миром
 			world.Start(width, height);
@@ -81,7 +82,7 @@ namespace CubeGame.Scripts
 			timer = new(50);
 			timer.Elapsed += Update10t;
 			timer.AutoReset = true;
-            timer.Start();
+			timer.Start();
 		}
 
 		void Update10t(object source, ElapsedEventArgs e)
@@ -96,7 +97,7 @@ namespace CubeGame.Scripts
 			}
 		}
 
-		public void RenderFrame(GameWindow gameWindow, float deltaTime)
+		public void RenderFrame(GameWindow gameWindow, float deltaTime, int width, int height)
         {
 			// позиция камеры (игрока)
 			Matrix4 view = world.player.Update(gameWindow, deltaTime, this);
@@ -162,6 +163,29 @@ namespace CubeGame.Scripts
 				// рисование
 				GL.DrawArrays(PrimitiveType.Lines, 0, data.Length / 4);
 			}
+
+			// рисование курсора
+			// подготовка
+			shader_line?.Use();
+			shader_line?.Uniform("view", Matrix4.Identity);
+			GL.BindVertexArray(vao_line);
+			GL.BindBuffer(BufferTarget.ArrayBuffer, vbo_line);
+
+			// загрузка в буфер
+			float px = 2f / width;
+			float py = 2f / height;
+			data_curs = [-px, -py, 0, 0,
+						  px,  py, 0, 0,
+						 -px,  py, 0, 0,
+
+						  px,  py, 0, 0,
+						 -px, -py, 0, 0,
+						  px, -py, 0, 0,];
+			GL.BufferData(BufferTarget.ArrayBuffer, data_curs.Length * sizeof(float), data_curs, BufferUsageHint.StreamDraw);
+
+			// рисование
+			GL.DrawArrays(PrimitiveType.Triangles, 0, data_curs.Length / 4);
+
 		}
 
 		//======================================== доп методы ========================================
