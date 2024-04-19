@@ -6,7 +6,8 @@ namespace CubeGame.Scripts
 	{
 		// размер массива
 		public const byte arraySize = 16;
-		public const byte ySize = 4;
+		//public const byte ySize = 4;
+		public static int ySize;
 
 		// список загруженных массивов
 		public Dictionary<Vector3, BlocksArray> arraysPos = [];
@@ -14,10 +15,51 @@ namespace CubeGame.Scripts
 		// игрок
 		public Player? player;
 
+		public bool pW2;
+
 		public void Start(int width, int height)
 		{
+			// подгрузка настроек
+			ySize = Configs.genY;
+
 			// игрок
 			player = new(width, height);
+		}
+
+		public void UpdateBlock(Render render)
+		{
+		pLocker:
+			if (render.pLocker || render.pWait)
+			{
+				Thread.Sleep(10);
+				//Console.Write(".");
+				pW2 = true;
+				goto pLocker;
+			}
+			else
+			{
+				// начало замка
+				render.pLocker = true;
+
+				foreach (KeyValuePair<Vector3, BlocksArray> i in arraysPos)
+				{
+					Vector3 pos = i.Key;
+					for (int x = 0; x < arraySize; x++)
+					{
+						for (int y = 0; y < arraySize; y++)
+						{
+							for (int z = 0; z < arraySize; z++)
+							{
+								i.Value.GetBlock((x, y, z), (Vector3i)pos).Script?.Update((x, y, z), pos, i.Value, render);
+							}
+						}
+					}
+				}
+
+				render.pLocker = false;
+				pW2 = false;
+				// конец
+			}
 		}
 
 		public bool Update(Vector3 playerPos, int renderDistance, Render render)
@@ -25,7 +67,7 @@ namespace CubeGame.Scripts
 			// генерация массивов
 			// замок на переменной render.pLocker
 			int ret = 0;
-			if (render.pLocker || render.pWait)
+			if (render.pLocker || render.pWait || pW2)
 			{
 				Thread.Sleep(100);
 				//Console.Write(".");
@@ -34,6 +76,8 @@ namespace CubeGame.Scripts
 			{
 				// начало замка
 				render.pLocker = true;
+
+				// обновление блоков
 
 				// перебор, для удаления дальних массивов
 				foreach (KeyValuePair<Vector3, BlocksArray> i in arraysPos)
@@ -46,7 +90,6 @@ namespace CubeGame.Scripts
 
 						// удаление
 						arraysPos.Remove(i.Key);
-						//Console.WriteLine($"удалён массив на координатах {i.Key.X} {i.Key.Y} {i.Key.Z} (дистанция {d})");
 					}
 				}
 
@@ -86,6 +129,8 @@ namespace CubeGame.Scripts
 						render.GenVert(ref tmp, pos);
 				}
 
+				Block.SetBlocks(render);
+
 				render.pLocker = false;
 				// конец
 			}
@@ -96,9 +141,12 @@ namespace CubeGame.Scripts
 
 		public void Stop(Render render)
 		{
+			render.timer.Stop();
 		_pLocker:
 			Thread.Sleep(100);
 			if(render.pLocker) goto _pLocker;
+			render.pLocker = true;
+
 			// сохранение всех массивов перед закрытием игры
 			foreach (KeyValuePair<Vector3, BlocksArray> i in arraysPos)
 			{

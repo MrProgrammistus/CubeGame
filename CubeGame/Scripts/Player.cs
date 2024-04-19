@@ -11,10 +11,10 @@ namespace CubeGame.Scripts
 		public Vector3 velocity;
 		public Vector3 rotation;
 		public Vector3i selectBlock;
-		public Vector3i selectBlockm;
+		public Vector3i selectBlockM;
 		public bool isSelectBlock;
-		float speed = 0.2f;
-		float distance = 100;
+		float speed = 20;
+		float distance = 50;
 
 		Vector3 lastPosition;
 
@@ -49,14 +49,15 @@ namespace CubeGame.Scripts
 
 			// ========== ВЫДЕЛЕНИЕ ==========
 			// Куда смотрит
-			for (int i = 0; i < distance; i+= 1)
+			float d = 0.1f;
+			for (float i = 0; i < distance; i+= d)
 			{
 				(Vector3i gp, Vector3i ap, Vector3i bp) = BlocksArray.GetPoses(position + rotation * i);
 				if (render.world.arraysPos.TryGetValue(ap, out BlocksArray? tmp) && tmp.GetBlock(bp, ap) != null && tmp.GetBlock(bp, ap).Type != Type.air)
 				{
-					for (float j = 0; j < 1; j += 0.0001f)
+					for (float j = 0; j < d; j += 0.001f)
 					{
-						(gp, ap, bp) = BlocksArray.GetPoses(position + rotation * (i + j - 1));
+						(gp, ap, bp) = BlocksArray.GetPoses(position + rotation * (i + j - d));
 						if (render.world.arraysPos.TryGetValue(ap, out tmp) && tmp.GetBlock(bp, ap) != null && tmp.GetBlock(bp, ap).Type != Type.air)
 						{
 							isSelectBlock = true;
@@ -65,7 +66,7 @@ namespace CubeGame.Scripts
 						}
 						else
 						{
-							selectBlockm = gp;
+							selectBlockM = gp;
 						}
 					}
 				}
@@ -77,18 +78,18 @@ namespace CubeGame.Scripts
 			// если нажат ПКМ
 			if (gameWindow.IsMouseButtonPressed(MouseButton.Right))
 			{
-				(Vector3i ap, Vector3i bp) = BlocksArray.GetPoses(selectBlockm);
+				(Vector3i ap, Vector3i bp) = BlocksArray.GetPoses(selectBlockM);
 
 				if (render.world.arraysPos.TryGetValue(ap, out BlocksArray? tmp))
 				{
-					tmp.GetBlock(bp, ap).Type = Type.stone;
+					tmp.GetBlock(bp, ap).Type = Configs.block;
 					render.GenVert(ref tmp, ap);
-					if(bp.X == 0				   && render.world.arraysPos.TryGetValue(ap - (1, 0, 0), out tmp)) render.GenVert(ref tmp, ap - (1, 0, 0));
-					if(bp.X == World.arraySize - 1 && render.world.arraysPos.TryGetValue(ap + (1, 0, 0), out tmp)) render.GenVert(ref tmp, ap + (1, 0, 0));
-					if(bp.Y == 0				   && render.world.arraysPos.TryGetValue(ap - (0, 1, 0), out tmp)) render.GenVert(ref tmp, ap - (0, 1, 0));
-					if(bp.Y == World.arraySize - 1 && render.world.arraysPos.TryGetValue(ap + (0, 1, 0), out tmp)) render.GenVert(ref tmp, ap + (0, 1, 0));
-					if(bp.Z == 0				   && render.world.arraysPos.TryGetValue(ap - (0, 0, 1), out tmp)) render.GenVert(ref tmp, ap - (0, 0, 1));
-					if(bp.Z == World.arraySize - 1 && render.world.arraysPos.TryGetValue(ap + (0, 0, 1), out tmp)) render.GenVert(ref tmp, ap + (0, 0, 1));
+					if (bp.X == 0					&& render.world.arraysPos.TryGetValue(ap - (1, 0, 0), out tmp)) render.GenVert(ref tmp, ap - (1, 0, 0));
+					if (bp.X == World.arraySize - 1 && render.world.arraysPos.TryGetValue(ap + (1, 0, 0), out tmp)) render.GenVert(ref tmp, ap + (1, 0, 0));
+					if (bp.Y == 0					&& render.world.arraysPos.TryGetValue(ap - (0, 1, 0), out tmp)) render.GenVert(ref tmp, ap - (0, 1, 0));
+					if (bp.Y == World.arraySize - 1 && render.world.arraysPos.TryGetValue(ap + (0, 1, 0), out tmp)) render.GenVert(ref tmp, ap + (0, 1, 0));
+					if (bp.Z == 0					&& render.world.arraysPos.TryGetValue(ap - (0, 0, 1), out tmp)) render.GenVert(ref tmp, ap - (0, 0, 1));
+					if (bp.Z == World.arraySize - 1 && render.world.arraysPos.TryGetValue(ap + (0, 0, 1), out tmp)) render.GenVert(ref tmp, ap + (0, 0, 1));
 					render.reRender = true;
 				}
 			}

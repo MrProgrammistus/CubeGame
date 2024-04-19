@@ -1,6 +1,7 @@
 ﻿using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Desktop;
+using System.Diagnostics;
 using System.Timers;
 
 namespace CubeGame.Scripts
@@ -43,36 +44,48 @@ namespace CubeGame.Scripts
         // мир
         public World world = new();
 
-        // дистанция рендера
-        const int renderDistance = 8;
+		// дистанция рендера
+		//const int renderDistance = 8;
+		public static int renderDistance;
 
 		// всякое
 		int count;
+		int count_alpha;
 		public bool reRender;
 
 		// замки
 		private readonly object locker = new();
+		private readonly object locker2 = new();
         public bool pLocker;
         public bool pWait;
 
 		// буферы
 		int vbo;
         int vao;
+		int vbo_alpha;
+		int vao_alpha;
 		int vbo_line;
 		int vao_line;
 
 		// текстуры
 		Texture texture;
 
-        System.Timers.Timer? timer;
+        public System.Timers.Timer? timer;
+        public System.Timers.Timer? timer2;
+		public Stopwatch stopwatch = new();
 
 		public void Load(int width, int height)
 		{
-			//текстуры
+			// подгрузка настроек
+			renderDistance = Configs.renderDist;
+
+			// текстуры
 			texture = new("Textures\\texture.png", TextureUnit.Texture0);
 
 			// загрузка драйверов
+			DriverGL.GLLoad();
 			(vbo, vao, shader) = DriverGL.Load();
+			(vbo_alpha, vao_alpha, _) = DriverGL.Load("");
 			(vbo_line, vao_line, shader_line) = DriverGL.Load(frag: "Shaders/shader_line.frag");
 
 			// стартовые манипуляции с миром
@@ -80,12 +93,17 @@ namespace CubeGame.Scripts
 
 			// таймер
 			timer = new(50);
-			timer.Elapsed += Update10t;
+			timer.Elapsed += Update50t;
+			timer.AutoReset = true;
+			timer.Start();
+			
+			timer = new(1000);
+			timer.Elapsed += Update1000t;
 			timer.AutoReset = true;
 			timer.Start();
 		}
 
-		void Update10t(object source, ElapsedEventArgs e)
+		void Update50t(object source, ElapsedEventArgs e) //переместить в World
 		{
             lock (locker)
             {
@@ -97,24 +115,49 @@ namespace CubeGame.Scripts
 			}
 		}
 
+		void Update1000t(object source, ElapsedEventArgs e)
+		{
+			lock (locker2)
+			{
+				stopwatch.Start();
+				world.UpdateBlock(this);
+				stopwatch.Stop();
+				stopwatch.Reset();
+			}
+		}
+
 		public void RenderFrame(GameWindow gameWindow, float deltaTime, int width, int height)
         {
+			//чистка буфера
+			GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+
 			// позиция камеры (игрока)
 			Matrix4 view = world.player.Update(gameWindow, deltaTime, this);
 
+			//=============================================================================================
+
 			// подготовка
-			GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-            shader?.Use();
+			GL.BlendEquation(BlendEquationMode.FuncAdd);
+			shader?.Use();
 			shader?.Uniform("view", view);
 
 			GL.BindVertexArray(vao);
 			GL.BindBuffer(BufferTarget.ArrayBuffer, vbo);
 
+			// рисование элементов
+			GL.BindVertexArray(vao);
+			GL.BindBuffer(BufferTarget.ArrayBuffer, vbo);
+			GL.DrawArrays(PrimitiveType.Triangles, 0, count / 4);
+
+			GL.BindVertexArray(vao_alpha);
+			GL.BindBuffer(BufferTarget.ArrayBuffer, vbo_alpha);
+			GL.DrawArrays(PrimitiveType.Triangles, 0, count_alpha / 4);
+
 			// обновление текстур (сцена)
 			if (reRender)
             {
-                // замок на переменной pLocker и pWait 
-                if (pLocker)
+				// замок на переменной pLocker и pWait 
+				if (pLocker)
                 {
                     pWait = true;
                 }
@@ -124,17 +167,36 @@ namespace CubeGame.Scripts
 
 					// подсчёт вершин
 					count = 0;
-					foreach (KeyValuePair<Vector3, BlocksArray> i in world.arraysPos) count += i.Value.vert.Count;
+					count_alpha = 0;
+					foreach (KeyValuePair<Vector3, BlocksArray> i in world.arraysPos)
+					{
+						count += i.Value.vert.Count;
+						count_alpha += i.Value.vert_alpha.Count;
+					}
+
 					// создание буфера
 					int offset = 0;
-
-					GL.BufferData(BufferTarget.ArrayBuffer, (count + offset) * sizeof(float), new float[count + offset], BufferUsageHint.StreamDraw);
+					int offset_alpha = 0;
+					GL.BindBuffer(BufferTarget.ArrayBuffer, vbo);
+					//Console.Write(1);
+					GL.BufferData(BufferTarget.ArrayBuffer, (count + offset) * sizeof(float), (nint)null, BufferUsageHint.StreamDraw);
+					//Console.Write(2);
+					GL.BindBuffer(BufferTarget.ArrayBuffer, vbo_alpha);
+					//Console.Write(3);
+					GL.BufferData(BufferTarget.ArrayBuffer, (count_alpha + offset_alpha) * sizeof(float), (nint)null, BufferUsageHint.StreamDraw);
+					//Console.WriteLine(4);
 
 					foreach (KeyValuePair<Vector3, BlocksArray> i in world.arraysPos)
 					{
 						// заливка в буфер
+						GL.BindBuffer(BufferTarget.ArrayBuffer, vbo);
 						GL.BufferSubData(BufferTarget.ArrayBuffer, offset * sizeof(float), i.Value.vert.Count * sizeof(float), i.Value.vert.ToArray()); // иногда зависает
+
+						GL.BindBuffer(BufferTarget.ArrayBuffer, vbo_alpha);
+						GL.BufferSubData(BufferTarget.ArrayBuffer, offset_alpha * sizeof(float), i.Value.vert_alpha.Count * sizeof(float), i.Value.vert_alpha.ToArray()); // иногда зависает
+
 						offset += i.Value.vert.Count;
+						offset_alpha += i.Value.vert_alpha.Count;
 					}
 
 					pLocker = false;
@@ -143,8 +205,9 @@ namespace CubeGame.Scripts
                 }
 			}
 
-            // рисование элементов
-			GL.DrawArrays(PrimitiveType.Triangles, 0, count / 4);
+			//=============================================================================================
+
+			GL.BlendEquation(BlendEquationMode.FuncSubtract);
 
 			// рисование выделенного блока
 			if (world.player.isSelectBlock)
@@ -160,9 +223,11 @@ namespace CubeGame.Scripts
 				AddPosArray(ref tmp, data, world.player.selectBlock, 0);
 				GL.BufferData(BufferTarget.ArrayBuffer, data.Length * sizeof(float), tmp.ToArray(), BufferUsageHint.StreamDraw);
 
-				// рисование
+				// рисование элементов
 				GL.DrawArrays(PrimitiveType.Lines, 0, data.Length / 4);
 			}
+
+			//=============================================================================================
 
 			// рисование курсора
 			// подготовка
@@ -183,9 +248,10 @@ namespace CubeGame.Scripts
 						  px, -py, 0, 0,];
 			GL.BufferData(BufferTarget.ArrayBuffer, data_curs.Length * sizeof(float), data_curs, BufferUsageHint.StreamDraw);
 
-			// рисование
+			// рисование элементов
 			GL.DrawArrays(PrimitiveType.Triangles, 0, data_curs.Length / 4);
 
+			//=============================================================================================
 		}
 
 		//======================================== доп методы ========================================
@@ -193,6 +259,7 @@ namespace CubeGame.Scripts
 		public void GenVert(ref BlocksArray blocksArray, Vector3i arrPos)
 		{
 			blocksArray.vert = [];
+			blocksArray.vert_alpha = [];
 			Block block;
 
 			// перебор блоков в массиве
@@ -214,7 +281,14 @@ namespace CubeGame.Scripts
 							for (int a = 0; a < block.cubeVertices.Count; a++)
 							{
 								// добавляем вершины в общий массив
-								AddPosArray(ref blocksArray.vert, block.cubeVertices[a], pos, block.Type);
+								if (!block.alphaType)
+								{
+									AddPosArray(ref blocksArray.vert, block.cubeVertices[a], pos, block.Type);
+								}
+								else
+								{
+									AddPosArray(ref blocksArray.vert_alpha, block.cubeVertices[a], pos, block.Type);
+								}
 							}
 						}
 					}

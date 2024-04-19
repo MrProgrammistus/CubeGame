@@ -20,12 +20,16 @@ void main(){
 	if((int(aData) & (255 * 256)) == 4 * 256) color = vec4(vec3(1.0, 0.9, 0.3) * 0.6, 1.0) + vec4(vec3((fragPos.y)/64), 0);
 	if((int(aData) & (255 * 256)) == 5 * 256) color = vec4(vec3(0.1, 0.1, 1.0) * 1.0, 0.5);
 
+	if((int(aData) & (255 * 256)) == 6 * 256) color = vec4(vec3(0.9, 0.9, 0.1) * 1.0, 1.0);
+	if((int(aData) & (255 * 256)) == 7 * 256) color = vec4(vec3(0.4, 0.3, 0.1) * 1.0, 1.0);
+	if((int(aData) & (255 * 256)) == 8 * 256) color = vec4(vec3(0.1, 0.4, 0.05) * 1.0, 1.0);
+
 	texCoord.x = int((int(aData) & 128) == 128);
 	texCoord.y = int((int(aData) & 64) == 64);
 
 	normal.x = int((int(aData) & 16) == 16) - int((int(aData) & 32) == 32);
 	normal.y = int((int(aData) & 4)  == 4)  - int((int(aData) & 8)  == 8);
 	normal.z = int((int(aData) & 1)  == 1)  - int((int(aData) & 2)  == 2);
-	
+
 	gl_Position = vec4(fragPos, 1) * view;
 }

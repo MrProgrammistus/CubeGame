@@ -13,9 +13,10 @@ namespace CubeGame.Scripts
         public Block[][][]? blocks;
 
 		public List<float> vert = [];
+		public List<float> vert_alpha = [];
 
         //ссылки world
-        World world;
+        public World world;
 
         public BlocksArray(byte size, float scale, World world)
         {
@@ -51,7 +52,6 @@ namespace CubeGame.Scripts
                     if (pos.Z >= size && world.arraysPos.TryGetValue(arrPos + (0, 0, 1), out tmp)) return tmp.GetBlock(pos - (0, 0, World.arraySize), arrPos + (0, 0, 1));
 				}
             }
-
             return Generation.Generate(pos.X, pos.Y, pos.Z, arrPos);
 		}
 

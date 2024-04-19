@@ -49,14 +49,21 @@ namespace CubeGame.Scripts
         void Load()
         {
 			timer.Enabled = true;
-			gameWindow.VSync = VSyncMode.On;
+			//gameWindow.VSync = VSyncMode.On;
 			render.Load(width, height);
         }
         void RenderFrame(FrameEventArgs e)
         {
-            realFps = (int)(1 / e.Time);
-            render.RenderFrame(gameWindow, (float)e.Time, width, height);
-            gameWindow.SwapBuffers();
+            try
+            {
+				realFps = (int)(1 / e.Time);
+				render.RenderFrame(gameWindow, (float)e.Time, width, height);
+				gameWindow.SwapBuffers();
+			}
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
         }
         void Unload()
         {
@@ -70,6 +77,7 @@ namespace CubeGame.Scripts
             width = e.Width;
             height = e.Height;
             GL.Viewport(0, 0, width, height);
+            render.world.player.camera.Resize((float)width / height);
         }
     }
 }

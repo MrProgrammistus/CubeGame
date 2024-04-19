@@ -49,17 +49,18 @@ namespace CubeGame.Scripts
 
             Vector3 delta = new();
 
-            if (input.IsKeyDown(Keys.W)) delta += Vector3.Normalize((rotation.X, 0, rotation.Z)) * deltaTime;
-            if (input.IsKeyDown(Keys.S)) delta -= Vector3.Normalize((rotation.X, 0, rotation.Z)) * deltaTime;
-            if (input.IsKeyDown(Keys.A)) delta -= Vector3.Normalize(Vector3.Cross(rotation, up)) * deltaTime;
-            if (input.IsKeyDown(Keys.D)) delta += Vector3.Normalize(Vector3.Cross(rotation, up)) * deltaTime;
-            if (input.IsKeyDown(Keys.Space)) delta += up * deltaTime;
-			if (input.IsKeyDown(Keys.LeftShift)) delta -= up * deltaTime;
-            if (input.IsKeyDown(Keys.LeftControl)) speed = 1;
+            if (input.IsKeyDown(Keys.W)) delta += Vector3.Normalize((rotation.X, 0, rotation.Z));
+            if (input.IsKeyDown(Keys.S)) delta -= Vector3.Normalize((rotation.X, 0, rotation.Z));
+            if (input.IsKeyDown(Keys.A)) delta -= Vector3.Normalize(Vector3.Cross(rotation, up));
+            if (input.IsKeyDown(Keys.D)) delta += Vector3.Normalize(Vector3.Cross(rotation, up));
+            if (input.IsKeyDown(Keys.Space)) delta += up;
+			if (input.IsKeyDown(Keys.LeftShift)) delta -= up;
+            if (input.IsKeyDown(Keys.LeftControl)) speed *= 5;
 
 			if(delta != Vector3.Zero) delta.Normalize();
+            delta *= deltaTime;
 
-            velocity = (velocity * 9 + delta * speed) / 10;
+			velocity = (velocity * 9 + delta * speed) / 10;
         }
 
         public void Resize(float aspect)

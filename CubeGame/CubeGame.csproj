@@ -13,6 +13,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Configs\General.conf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Shaders\shader_line.frag">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

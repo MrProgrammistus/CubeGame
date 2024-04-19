@@ -9,5 +9,5 @@ in vec3 normal;
 out vec4 outClor;
 
 void main(){
-	outClor = vec4(vec3(0), 1);
+	outClor = vec4(vec3(1), 0.5f);
 }

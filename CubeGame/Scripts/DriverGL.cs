@@ -4,11 +4,18 @@ namespace CubeGame.Scripts
 {
 	internal class DriverGL
 	{
+		public static void GLLoad()
+		{
+			// настройки GL
+			GL.ClearColor(0.7f, 0.7f, 0.7f, 1);
+			GL.Enable(EnableCap.DepthTest);
+			GL.Enable(EnableCap.Blend);
+			GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+			GL.Enable(EnableCap.CullFace);
+		}
+
 		public static (int, int, Shader) Load(string vert = "Shaders/shader.vert", string frag = "Shaders/shader.frag")
 		{
-			// настройки шейдеров
-			Shader shader = new(vert, frag);
-
 			// настройки буферов
 			int vbo = GL.GenBuffer();
 			GL.BindBuffer(BufferTarget.ArrayBuffer, vbo);
@@ -20,14 +27,8 @@ namespace CubeGame.Scripts
 			GL.EnableVertexAttribArray(1);
 			GL.VertexAttribPointer(1, 1, VertexAttribPointerType.Float, false, 4 * sizeof(float), 3 * sizeof(float));
 
-			// настройки GL
-			GL.ClearColor(0.7f, 0.7f, 0.7f, 1);
-			GL.Enable(EnableCap.DepthTest);
-			GL.Enable(EnableCap.Blend);
-			GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-			GL.Enable(EnableCap.CullFace);
-
-			return (vbo, vao, shader);
+			// настройки шейдеров и вывод
+			return (vbo, vao, (vert != "" && frag != "")? new(vert, frag) : null);
 		}
 	}
 }

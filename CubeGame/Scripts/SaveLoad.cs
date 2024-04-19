@@ -20,17 +20,15 @@ namespace CubeGame.Scripts
 {
     internal class SaveLoad
     {
-        static string saveFile = "test";
-
         const byte version = 0; // <== ВАЖНО - версия загрузки, увеличивать при изменении загрузчика с момента последнего релиза
 
         public static void Save(string path, BlocksArray blocksArray, Vector3i pos)
         {
             //открыть файл
             FileStream file;
-            if(!Directory.Exists($"Worlds\\{saveFile}")) Directory.CreateDirectory($"Worlds\\{saveFile}");
+            if(!Directory.Exists($"Worlds\\{Configs.saveFile}")) Directory.CreateDirectory($"Worlds\\{Configs.saveFile}");
 
-            file = File.OpenWrite($"Worlds\\{saveFile}\\{path}");
+            file = File.OpenWrite($"Worlds\\{Configs.saveFile}\\{path}");
 
             //записать версию сохранения
             file.WriteByte(version);
@@ -51,14 +49,13 @@ namespace CubeGame.Scripts
 
             //закрыть файл
             file.Close();
-			//Console.WriteLine($"сохранен массив на координатах {pos.X} {pos.Y} {pos.Z} в файл {path}");
 		}
     
         public static bool Load(string path, Vector3i pos, ref Dictionary<Vector3, BlocksArray> arraysPos, World world)
 		{
-            if (!File.Exists($"Worlds\\{saveFile}\\{path}")) return false;
+            if (!File.Exists($"Worlds\\{Configs.saveFile}\\{path}")) return false;
 
-			FileStream file = File.OpenRead($"Worlds\\{saveFile}\\{path}");
+			FileStream file = File.OpenRead($"Worlds\\{Configs.saveFile}\\{path}");
 
 			int version = file.ReadByte();
 			switch (version)
@@ -70,7 +67,6 @@ namespace CubeGame.Scripts
 
 			file.Close();
 
-			//Console.WriteLine($"загружен массив на координатах {pos.X} {pos.Y} {pos.Z} из файла {path}");
             return true;
         }
 

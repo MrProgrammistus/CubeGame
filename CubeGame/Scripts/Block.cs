@@ -1,4 +1,4 @@
-﻿using OpenTK.Graphics.ES11;
+﻿using CubeGame.Scripts.Blocks;
 using OpenTK.Mathematics;
 
 namespace CubeGame.Scripts
@@ -8,13 +8,15 @@ namespace CubeGame.Scripts
 		public Block(Type type)
 		{
 			Type = type;
-			SetAlphaType();
 		}
 
-		public void SetAlphaType()
+		public void SetConf()
 		{
 			if (Type == Type.air || Type == Type.water) alphaType = true;
 			else alphaType = false;
+
+			if (Type == Type.plant) Script = new Plant();
+			else Script = null;
 		}
 
 		// 0bXX_XX_XX_XX
@@ -77,11 +79,79 @@ namespace CubeGame.Scripts
 			-0.5f, -0.5f, -0.5f, 0b10_00_00_10,//11
 		};
 
-		public Type Type { get { return _type; } set { _type = value; SetAlphaType(); } }
+		public Type Type { get { return _type; } set { _type = value; SetConf(); } }
 		public Type _type;
 	    public List<float[]> cubeVertices = [];
 
 		public bool alphaType;
+
+		public BaseBS? Script;
+
+		public static List<Tuple<Vector3i, Vector3i, BlocksArray, Type, BaseBS>> queue = [];
+
+		public static void SetBlockQueue(Vector3i bp, Vector3i ap, BlocksArray tmp, Type type, BaseBS bs)
+		{
+			queue.Add(new(bp, ap, tmp, type, bs));
+		}
+
+		public static void SetBlocks(Render render)
+		{
+			foreach (Tuple<Vector3i, Vector3i, BlocksArray, Type, BaseBS> q in queue)
+			{
+				Vector3i bp = q.Item1;
+				Vector3i ap = q.Item2;
+				BlocksArray tmp = q.Item3;
+				Type type = q.Item4;
+				BaseBS bs = q.Item5;
+
+				if (bp.X < 0)
+				{
+					bp.X += World.arraySize;
+					ap.X -= 1;
+				}
+				if (bp.X >= World.arraySize)
+				{
+					bp.X -= World.arraySize;
+					ap.X += 1;
+				}
+
+				if (bp.Y < 0)
+				{
+					bp.Y += World.arraySize;
+					ap.Y -= 1;
+				}
+				if (bp.Y >= World.arraySize)
+				{
+					bp.Y -= World.arraySize;
+					ap.Y += 1;
+				}
+
+				if (bp.Z < 0)
+				{
+					bp.Z += World.arraySize;
+					ap.Z -= 1;
+				}
+				if (bp.Z >= World.arraySize)
+				{
+					bp.Z -= World.arraySize;
+					ap.Z += 1;
+				}
+
+				if (!tmp.world.arraysPos.TryGetValue(ap, out tmp)) continue;
+
+				tmp.GetBlock(bp, ap).Type = type;
+				if(bs != null) tmp.GetBlock(bp, ap).Script = bs;
+				render.GenVert(ref tmp, ap);
+				if (bp.X == 0					&& render.world.arraysPos.TryGetValue(ap - (1, 0, 0), out tmp)) render.GenVert(ref tmp, ap - (1, 0, 0));
+				if (bp.X == World.arraySize - 1 && render.world.arraysPos.TryGetValue(ap + (1, 0, 0), out tmp)) render.GenVert(ref tmp, ap + (1, 0, 0));
+				if (bp.Y == 0					&& render.world.arraysPos.TryGetValue(ap - (0, 1, 0), out tmp)) render.GenVert(ref tmp, ap - (0, 1, 0));
+				if (bp.Y == World.arraySize - 1 && render.world.arraysPos.TryGetValue(ap + (0, 1, 0), out tmp)) render.GenVert(ref tmp, ap + (0, 1, 0));
+				if (bp.Z == 0					&& render.world.arraysPos.TryGetValue(ap - (0, 0, 1), out tmp)) render.GenVert(ref tmp, ap - (0, 0, 1));
+				if (bp.Z == World.arraySize - 1 && render.world.arraysPos.TryGetValue(ap + (0, 0, 1), out tmp)) render.GenVert(ref tmp, ap + (0, 0, 1));
+				render.reRender = true;
+			}
+			queue.Clear();
+		}
 
 		public void Refresh(BlocksArray blocksArray, Vector3i pos, Vector3i arrPos)
 		{
@@ -108,11 +178,14 @@ namespace CubeGame.Scripts
 
 	enum Type
 	{
-		zero,  // ничего
-		air,   // воздух
-		stone, // камень
-		soil,  // земля
-		sand,  // песок
-		water, // вода
+		zero,   // ничего
+		air,    // воздух
+		stone,  // камень
+		soil,   // земля
+		sand,   // песок
+		water,  // вода
+		plant,  // растение
+		log,    // дерево
+		leaves, // листья
 	}
 }

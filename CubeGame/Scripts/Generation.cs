@@ -30,11 +30,11 @@ namespace CubeGame.Scripts
 			float r = n.Generate(i + pos.X * World.arraySize, k + pos.Z * World.arraySize) * 128 - 64;
 			float y = j + pos.Y * World.arraySize;
 
-			if		(y < r && y < 0) return new(Type.stone);
-			else if (y < r && y < 5) return new(Type.sand);
-			else if (y < r)		     return new(Type.soil);
-			//else if (y < 0)			 return new(Type.water);
-			else					 return new(Type.air);
+			if		(r - y < 5 && r - y >= 0 && y < 5) return new(Type.sand);
+			else if (r - y < 5 && r - y >= 0) return new(Type.soil);
+			else if (y < r) return new(Type.stone);
+			else if (y < 0) return new(Type.water);
+			else  return new(Type.air);
 		}
 	}
 }
