@@ -21,6 +21,9 @@ namespace CubeGame.Scripts
 		// камера
 		public Camera camera;
 
+		// ключ на 16
+		public bool playerKey;
+
 		public Player(int width, int height)
 		{
 			lastPosition = position;
@@ -29,6 +32,8 @@ namespace CubeGame.Scripts
 
 		public Matrix4 Update(GameWindow gameWindow, float deltaTime, Render render)
 		{
+			playerKey = true;
+
 			// ========== ДВИЖЕНИЕ ==========
 			// гравитация
 			//velocity.Y -= 2 * deltaTime;
@@ -93,6 +98,16 @@ namespace CubeGame.Scripts
 					render.reRender = true;
 				}
 			}
+			// если нажат СКМ
+			if (gameWindow.IsMouseButtonPressed(MouseButton.Middle))
+			{
+				(Vector3i ap, Vector3i bp) = BlocksArray.GetPoses(selectBlock);
+
+				if (render.world.arraysPos.TryGetValue(ap, out BlocksArray? tmp))
+				{
+					Configs.block = tmp.GetBlock(bp, ap).Type;
+				}
+			}
 			// если нажат ЛКМ
 			if (gameWindow.IsMouseButtonPressed(MouseButton.Left))
 			{
@@ -111,8 +126,19 @@ namespace CubeGame.Scripts
 					render.reRender = true;
 				}
 			}
+			if (gameWindow.IsKeyPressed(Keys.KeyPadAdd))
+			{
+				Configs.block++;
+				Console.WriteLine($"выбран блок: {Configs.block}");
+			}
+			if (gameWindow.IsKeyPressed(Keys.KeyPadSubtract))
+			{
+				Configs.block--;
+				Console.WriteLine($"выбран блок: {Configs.block}");
+			}
 
 			// ========== КОНЕЦ ==========
+			playerKey = false;
 			return Matrix4.LookAt(position, position + rotation, (0, 1, 0)) * camera.projection;
 		}
 	}

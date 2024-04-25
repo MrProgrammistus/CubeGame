@@ -69,10 +69,15 @@ namespace CubeGame.Scripts
 
 		// текстуры
 		Texture texture;
+		Texture texture2;
+		Texture texture_leaves;
+		Texture texture_log;
 
         public System.Timers.Timer? timer;
         public System.Timers.Timer? timer2;
 		public Stopwatch stopwatch = new();
+
+		float time;
 
 		public void Load(int width, int height)
 		{
@@ -81,6 +86,9 @@ namespace CubeGame.Scripts
 
 			// текстуры
 			texture = new("Textures\\texture.png", TextureUnit.Texture0);
+			texture2 = new("Textures\\texture2.png", TextureUnit.Texture1);
+			texture_leaves = new("Textures\\texture_leaves.png", TextureUnit.Texture2);
+			texture_log = new("Textures\\texture_log.png", TextureUnit.Texture3);
 
 			// загрузка драйверов
 			DriverGL.GLLoad();
@@ -97,33 +105,50 @@ namespace CubeGame.Scripts
 			timer.AutoReset = true;
 			timer.Start();
 			
-			timer = new(1000);
-			timer.Elapsed += Update1000t;
+			timer = new(500);
+			timer.Elapsed += Update500t;
 			timer.AutoReset = true;
 			timer.Start();
 		}
 
 		void Update50t(object source, ElapsedEventArgs e) //переместить в World
 		{
-            lock (locker)
-            {
-				// обновление мира
-                if (world.Update(world.player.position, renderDistance, this))
-                {
-                    reRender = true;
-                }
+			try
+			{
+				lock (locker)
+				{
+					// обновление мира
+					if (world.Update(world.player.position, renderDistance, this))
+					{
+						reRender = true;
+					}
+				}
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine(ex.ToString());
 			}
 		}
 
-		void Update1000t(object source, ElapsedEventArgs e)
+		void Update500t(object source, ElapsedEventArgs e)
 		{
-			lock (locker2)
+			try
 			{
-				stopwatch.Start();
-				world.UpdateBlock(this);
-				stopwatch.Stop();
-				stopwatch.Reset();
+				lock (locker2)
+				{
+					stopwatch.Start();
+					world.UpdateBlock(this);
+					stopwatch.Stop();
+					//Console.WriteLine(stopwatch.ElapsedMilliseconds);
+					stopwatch.Reset();
+				}
 			}
+			catch (Exception ex)
+			{
+				Console.WriteLine(ex.ToString());
+			}
+			time++;
+			if (time > 5) time = 0; 
 		}
 
 		public void RenderFrame(GameWindow gameWindow, float deltaTime, int width, int height)
@@ -140,6 +165,7 @@ namespace CubeGame.Scripts
 			GL.BlendEquation(BlendEquationMode.FuncAdd);
 			shader?.Use();
 			shader?.Uniform("view", view);
+			shader?.Uniform("time", time);
 
 			GL.BindVertexArray(vao);
 			GL.BindBuffer(BufferTarget.ArrayBuffer, vbo);
@@ -220,7 +246,7 @@ namespace CubeGame.Scripts
 
 				// загрузка в буфер
 				List<float> tmp = [];
-				AddPosArray(ref tmp, data, world.player.selectBlock, 0);
+				AddPosArray(ref tmp, data, world.player.selectBlock, 0, 0);
 				GL.BufferData(BufferTarget.ArrayBuffer, data.Length * sizeof(float), tmp.ToArray(), BufferUsageHint.StreamDraw);
 
 				// рисование элементов
@@ -283,11 +309,11 @@ namespace CubeGame.Scripts
 								// добавляем вершины в общий массив
 								if (!block.alphaType)
 								{
-									AddPosArray(ref blocksArray.vert, block.cubeVertices[a], pos, block.Type);
+									AddPosArray(ref blocksArray.vert, block.cubeVertices[a], pos, block.Type, 0);
 								}
 								else
 								{
-									AddPosArray(ref blocksArray.vert_alpha, block.cubeVertices[a], pos, block.Type);
+									AddPosArray(ref blocksArray.vert_alpha, block.cubeVertices[a], pos, block.Type, 0);
 								}
 							}
 						}
@@ -296,14 +322,14 @@ namespace CubeGame.Scripts
 			}
 		}
 
-		void AddPosArray(ref List<float> vert, float[] arr, Vector3 pos, Type type)
+		void AddPosArray(ref List<float> vert, float[] arr, Vector3 pos, Type type, int inf)
         {
             for (int i = 0; i < arr.Length / 4; i++)
             {
                 vert.Add(arr[i * 4 + 0] + pos.X);
                 vert.Add(arr[i * 4 + 1] + pos.Y);
                 vert.Add(arr[i * 4 + 2] + pos.Z);
-                vert.Add(arr[i * 4 + 3] + (int)type * 256);
+                vert.Add(arr[i * 4 + 3] + (int)type * 256 + inf * 65536);
             }
         }
     }

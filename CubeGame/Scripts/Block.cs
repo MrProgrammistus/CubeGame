@@ -178,14 +178,33 @@ namespace CubeGame.Scripts
 
 	enum Type
 	{
-		zero,   // ничего
-		air,    // воздух
-		stone,  // камень
-		soil,   // земля
-		sand,   // песок
-		water,  // вода
+		zero,  // ничего
+
+		air,   // воздух
+		stone, // камень
+		soil,  // земля
+		sand,  // песок
+		water, // вода
+
 		plant,  // растение
 		log,    // дерево
 		leaves, // листья
+
+		block_white,       // белый      строительный блок
+		block_gray,        // серый      строительный блок
+		block_black,       // черный     строительный блок
+		block_red,         // красный    строительный блок
+		block_yellow,      // желтый     строительный блок
+		block_green,       // зеленый    строительный блок
+		block_turquoise,   // бирюзовый  строительный блок
+		block_blue,        // синий      строительный блок
+		block_violet,      // фиолетовый строительный блок
+		block_orange,      // оранжевый  строительный блок
+		block_brown,       // коричневый строительный блок
+		block_light_red,   // розовый    строительный блок
+		block_light_green, // лаймовый   строительный блок
+		block_light_blue,  // голубой    строительный блок
+
+		color_block,       // меняющий цвет блок
 	}
 }

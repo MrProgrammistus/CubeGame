@@ -1,4 +1,6 @@
-﻿using OpenTK.Mathematics;
+﻿using CubeGame.Scripts.Blocks;
+using OpenTK.Mathematics;
+using System.Runtime.CompilerServices;
 
 namespace CubeGame.Scripts
 {
@@ -50,12 +52,11 @@ namespace CubeGame.Scripts
 						{
 							for (int z = 0; z < arraySize; z++)
 							{
-								i.Value.GetBlock((x, y, z), (Vector3i)pos).Script?.Update((x, y, z), pos, i.Value, render);
+								i.Value.GetBlockFast((x, y, z)).Script?.Update((x, y, z), pos, i.Value, render);
 							}
 						}
 					}
 				}
-
 				render.pLocker = false;
 				pW2 = false;
 				// конец
@@ -148,8 +149,14 @@ namespace CubeGame.Scripts
 			render.pLocker = true;
 
 			// сохранение всех массивов перед закрытием игры
+			float j = 0;
 			foreach (KeyValuePair<Vector3, BlocksArray> i in arraysPos)
 			{
+				Console.SetCursorPosition(0, Console.CursorTop);
+				Console.Write($"Сохранение мира [{string.Concat(Enumerable.Repeat("#", (int)MathF.Ceiling(j / arraysPos.Count * 64)))}" +
+											   $"{string.Concat(Enumerable.Repeat("-", (int)MathF.Floor((arraysPos.Count - j) / arraysPos.Count * 64)))}]");
+
+				j++;
 				SaveLoad.Save($"blocksArray_{i.Key.X}_{i.Key.Y}_{i.Key.Z}.save", i.Value, (Vector3i)i.Key);
 			}
 		}
@@ -159,16 +166,13 @@ namespace CubeGame.Scripts
 			bool generate = !arraysPos.TryGetValue(pos, out _);
 			if (generate)
 			{
+				// загрузка
+				if (SaveLoad.Load($"blocksArray_{pos.X}_{pos.Y}_{pos.Z}.save", pos, ref arraysPos, this)) ;
+				else
 				{
-					// загрузка
-					if(SaveLoad.Load($"blocksArray_{pos.X}_{pos.Y}_{pos.Z}.save", pos, ref arraysPos, this));
-					else
-					{
-						// генерация
-						Generation.GenerateArray(ref arraysPos, pos, this);
-					}
+					// генерация
+					Generation.GenerateArray(ref arraysPos, pos, this);
 				}
-
 				return true;
 			}
 			return false;

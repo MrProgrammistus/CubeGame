@@ -58,15 +58,16 @@ namespace CubeGame.Scripts
             {
 				realFps = (int)(1 / e.Time);
 				render.RenderFrame(gameWindow, (float)e.Time, width, height);
-				gameWindow.SwapBuffers();
 			}
             catch (Exception ex)
             {
                 Console.WriteLine(ex.ToString());
             }
-        }
+			gameWindow.SwapBuffers();
+		}
         void Unload()
         {
+            Console.WriteLine("Подготовка к сохранению мира...");
             render.shader?.Dispose();
             render.shader_line?.Dispose();
             render.world.Stop(render);

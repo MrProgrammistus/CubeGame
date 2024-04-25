@@ -54,6 +54,11 @@ namespace CubeGame.Scripts
             }
             return Generation.Generate(pos.X, pos.Y, pos.Z, arrPos);
 		}
+        public Block GetBlockFast(Vector3i pos)
+        {
+			if (blocks != null) return blocks[pos.X][pos.Y][pos.Z];
+            return new(Type.zero);
+		}
 
 		public static (Vector3i, Vector3i, Vector3i) GetPoses(Vector3 position, float offset = 0.5f)
         {
