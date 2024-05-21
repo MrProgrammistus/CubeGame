@@ -1,15 +1,17 @@
-#version 460 core
+#version 420 core
 
 layout(binding = 0) uniform sampler2D texture0;
 
-in vec3 fragPos;
-in vec2 texCoord;
-in vec3 normal;
 in vec4 color;
+in flat int data;
+in vec3 pos;
 
 out vec4 outClor;
 
 void main(){
 	outClor = color;
-	outClor *= texture(texture0, texCoord);
+	
+	if(data == 0){
+		outClor.rgb *= (length(pos) - 300) / 50;
+	}
 }

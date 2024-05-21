@@ -26,6 +26,11 @@ void main() {
     color = a_in[0].color;
     aData = a_in[0].aData;
     
+    if(a_in[0].yx == 0 && a_in[0].yz == 0 && a_in[0].yxz == 0){
+        EndPrimitive();
+        return;
+    }
+
     gl_Position = gl_in[0].gl_Position * view;
     EmitVertex();
 

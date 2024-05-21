@@ -3,28 +3,44 @@ using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using ProjectCube.Scripts.RenderDir;
 using ProjectCube.Scripts.WorldDir;
+using ProjectCube.Scripts.WorldDir.SceneDir;
+using System.Diagnostics;
 using System.Timers;
 
 namespace ProjectCube.Scripts
 {
-    internal class Window : WindowConfigs
+	class Base(Window window)
 	{
-		GameWindowSettings gameWindowSettings = new();
-		NativeWindowSettings nativeWindowSettings = new();
+		public Window window = window;
+	}
+
+    internal class Window : Configs
+	{
+		readonly GameWindowSettings gameWindowSettings = new();
+		readonly NativeWindowSettings nativeWindowSettings = new();
 		public GameWindow gameWindow;
 
 
         System.Timers.Timer fpsTimer = new(fpsTimerUpdate);
-		int fps;
-
 		System.Timers.Timer PhysTimer = new(PhysTimerUpdate);
+		System.Timers.Timer GenTimer = new(GenTimerUpdate);
 
+		int FPS, PWT, GWT;
 
-		public Render render = new();
-		public World world = new();
+		public Render render;
+		public World world;
+		public Scene scene;
 
-		public Window()
+		private readonly object locker = new();
+
+		//public bool reRender;
+
+		public Window() : base(null)
 		{
+			render = new(this);
+			world = new(this);
+			scene = new(this);
+
 			gameWindow = new(gameWindowSettings, nativeWindowSettings);
 
 			gameWindow.ClientSize = new(width, height);
@@ -35,41 +51,87 @@ namespace ProjectCube.Scripts
 			gameWindow.Unload += Stop;
 			gameWindow.Resize += Resize;
 
-			void Time(object source, ElapsedEventArgs e) => gameWindow.Title = $"ProjectCube (FPS: {fps})";
+			void Time(object source, ElapsedEventArgs e) => gameWindow.Title = $"ProjectCube (FPS: {FPS}; PUT: {PWT}; GUT: {GWT})";
 			fpsTimer.Elapsed += Time;
 			fpsTimer.AutoReset = true;
 			fpsTimer.Start();
 
 			PhysTimer.Elapsed += PhysUpdate;
 			PhysTimer.AutoReset = true;
-			PhysTimer.Start();
+
+			GenTimer.Elapsed += GenUpdate;
+			GenTimer.AutoReset = true;
 		}
 
 		public void Run() => gameWindow.Run();
 
 		public void Start()
 		{
+			scene.Awake();
+
+
+
+			world.terrain.Start();
+			//world.planets.Start();
+
+			foreach (var i in scene.gameObjects) foreach (var j in i.elements) j.Start();
+
 			render.Start();
+			PhysTimer.Start();
+			GenTimer.Start();
 		}
 
 		public void Update(FrameEventArgs e)
 		{
-			fps = (int)(1 / e.Time);
+			FPS = (int)Math.Round(1 / e.Time);
 
-			render.Update(this);
+			render.Update();
+			//reRender = render.reRenderSphere;
 			gameWindow.SwapBuffers();
 
-			world.Update(this, e.Time );
+            foreach (var i in scene.gameObjects) foreach (var j in i.elements) j.Update((float)e.Time);
+
+			//world.player.Update((float)e.Time);
+			//world.planets.Update();
 		}
 
 		public void PhysUpdate(object source, ElapsedEventArgs e)
 		{
+			Stopwatch sw = new();
+			sw.Start();
 
+			world.PhysUpdate();
+
+			foreach (var i in scene.gameObjects) foreach (var j in i.elements) j.PhysUpdate();
+
+			sw.Stop();
+			PWT = (int)Math.Round((double)sw.ElapsedMilliseconds > 0 ? (double)sw.ElapsedMilliseconds : 0);
+		}
+
+		public void GenUpdate(object source, ElapsedEventArgs e)
+		{
+			Stopwatch sw = new();
+			sw.Start();
+
+			lock (locker)
+			{
+				//world.terrain.GenUpdate(); // генерация ландшафта
+
+				foreach (var i in scene.gameObjects) foreach (var j in i.elements) j.GenUpdate();
+				//render.reRenderSphere = reRender;
+			}
+
+			sw.Stop();
+			GWT = (int)Math.Round((double)sw.ElapsedMilliseconds > 0 ? (double)sw.ElapsedMilliseconds : 0);
 		}
 
 		public void Stop()
 		{
 			render.Stop();
+			world.terrain.Stop();
+
+			foreach (var i in scene.gameObjects) foreach (var j in i.elements) j.Stop();
+
 		}
 
 
@@ -80,7 +142,9 @@ namespace ProjectCube.Scripts
 			height = e.Height;
 			GL.Viewport(0, 0, width, height);
 
-			world.player.Resize();
+			foreach (var i in scene.gameObjects) foreach (var j in i.elements) j.Resize();
+
+			//world.player.Resize();
 		}
 	}
 }

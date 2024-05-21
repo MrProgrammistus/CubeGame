@@ -3,7 +3,7 @@ using OpenTK.Mathematics;
 
 namespace ProjectCube.Scripts.RenderDir
 {
-	internal class Shader
+	public class Shader
 	{
 		public int shaderProgram;
 
@@ -12,7 +12,6 @@ namespace ProjectCube.Scripts.RenderDir
 			int vertexShader = CreateShader(vertexPath, ShaderType.VertexShader);
 			int fragmentShader = CreateShader(fragmentPath, ShaderType.FragmentShader);
 
-			//создание программы шейдеров
 			shaderProgram = GL.CreateProgram();
 			GL.AttachShader(shaderProgram, vertexShader);
 			GL.AttachShader(shaderProgram, fragmentShader);
@@ -20,7 +19,6 @@ namespace ProjectCube.Scripts.RenderDir
 			GL.GetProgram(shaderProgram, GetProgramParameterName.LinkStatus, out int log);
 			if (log == 0) Console.WriteLine(GL.GetProgramInfoLog(shaderProgram));
 
-			//удаление следов
 			GL.DetachShader(shaderProgram, vertexShader);
 			GL.DetachShader(shaderProgram, fragmentShader);
 			GL.DeleteShader(vertexShader);
@@ -33,7 +31,6 @@ namespace ProjectCube.Scripts.RenderDir
 			int geometryShader = CreateShader(geometryPath, ShaderType.GeometryShader);
 			int fragmentShader = CreateShader(fragmentPath, ShaderType.FragmentShader);
 
-			//создание программы шейдеров
 			shaderProgram = GL.CreateProgram();
 			GL.AttachShader(shaderProgram, vertexShader);
 			GL.AttachShader(shaderProgram, geometryShader);
@@ -42,7 +39,6 @@ namespace ProjectCube.Scripts.RenderDir
 			GL.GetProgram(shaderProgram, GetProgramParameterName.LinkStatus, out int log);
 			if (log == 0) Console.WriteLine(GL.GetProgramInfoLog(shaderProgram));
 
-			//удаление следов
 			GL.DetachShader(shaderProgram, vertexShader);
 			GL.DetachShader(shaderProgram, geometryShader);
 			GL.DetachShader(shaderProgram, fragmentShader);
@@ -53,12 +49,10 @@ namespace ProjectCube.Scripts.RenderDir
 
 		public int CreateShader(string shaderPath, ShaderType shaderType)
 		{
-			//чтение файла шейдера
 			string shaderSource = File.ReadAllText(shaderPath);
 			int shader = GL.CreateShader(shaderType);
 			GL.ShaderSource(shader, shaderSource);
 
-			//компиляция шейдера
 			GL.CompileShader(shader);
 			GL.GetShader(shader, ShaderParameter.CompileStatus, out int log);
 			if (log == 0) Console.WriteLine(GL.GetShaderInfoLog(shader));

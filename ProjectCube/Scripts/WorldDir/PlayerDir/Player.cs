@@ -1,31 +1,72 @@
 ﻿using OpenTK.Mathematics;
+using ProjectCube.Scripts.WorldDir.PlanetsDir;
+using ProjectCube.Scripts.WorldDir.SceneDir;
 
 namespace ProjectCube.Scripts.WorldDir.PlayerDir
 {
-    internal class Player : PlayerConfig
-    {
-		public Vector3 position;
+    internal class Player(Window window) : InterBase
+	{
+		public Vector3 position = (-350, 0, 0);
+		public Vector3 lastPosition;
 		public Vector3 velocity;
-		public Vector3 rotation;
+		public Vector3 rotation = (1, 0, 0);
+		public Vector2 angleRotation;
 
 		public Matrix4 view;
 		public Matrix4 projection;
 
-		Move move = new();
+		public Vector3 up;
 
-		public void Update(Window window, double time)
+		//Move move = new(window);
+		SphereMove sphereMove = new(window);
+
+		public override void Update(float time)
 		{
-			move.Update(ref velocity, ref rotation, window, time);
-			position += velocity;
+			Matrix4 matrix = Matrix4.Identity;
+
+			Vector3 centerOfMass = FindCenterOfMass();
+
+			SphereVector vector = SphereVector.ToSphere(position);
+			matrix *= Matrix4.CreateRotationZ(MathHelper.DegreesToRadians(-vector.O));
+			matrix *= Matrix4.CreateRotationY(MathHelper.DegreesToRadians(-vector.F));
+
+			up = position;
 
 
-			view = Matrix4.LookAt(position, position + rotation, (0, 1, 0)) * projection;
+			//move.Update(ref velocity, ref angleRotation, out rotation, (0, 1, 0), window, time);
+			sphereMove.Update(ref velocity, ref angleRotation, ref rotation, matrix, (0, 1, 0), window, time);
+			position += velocity * time;
+			lastPosition = position;
+
+			//view = Matrix4.LookAt(position, position + rotation, (0, 1, 0)) * projection;
+			view = Matrix4.LookAt(position, position + rotation, up) * projection;
 		}
 		
-
-		public void Resize()
+		public Vector3 FindCenterOfMass()
 		{
-			projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(90), (float)WindowConfigs.width / WindowConfigs.height, 0.01f, 1000f);
+			Vector3 centerOfMass = (0, 0, 0);
+			float totalMass = 0;
+			List<(Vector3, float)> masses = [];
+			foreach (var i in window.scene.gameObjects)
+			{
+				if (i.GetElement<Planet>() != null)
+				{
+					masses.Add((i.position, i.GetElement<Planet>().mass));
+				}
+			}
+			foreach (var i in masses)
+			{
+				totalMass += i.Item2;
+				centerOfMass += i.Item1 * i.Item2;
+			}
+			centerOfMass /= totalMass;
+
+			return centerOfMass;
+		}
+
+		public override void Resize()
+		{
+			projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(Configs.fov), (float)Configs.width / Configs.height, Configs.depthNear, Configs.depthFar);
 		}
 	}
 }
